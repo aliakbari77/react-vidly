@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { getMovies } from "../services/fakeMovieService";
+import { paginate } from "../utils/paginate";
 import Like from "./common/like";
 import Pagination from "./common/pagination";
 
@@ -7,6 +8,7 @@ class Movies extends Component {
   state = {
     movies: getMovies(),
     pageSize: 4,
+    currentPage: 1,
   };
 
   handleDelete = (m_id) => {
@@ -16,23 +18,27 @@ class Movies extends Component {
     this.setState({ movies: this.state.movies });
   };
 
-  renderTableData = () => {
-    let list = this.state.movies.map((m) => {
+  renderTableData = (movies) => {
+    let list = movies.map((m) => {
       return (
         <tr key={m._id}>
           <td>{m.title}</td>
           <td>{m.genre.name}</td>
           <td>{m.numberInStock}</td>
           <td>{m.dailyRentalRate}</td>
-          <Like movie={m} onHeart={this.handleHeart} />
-          <button
-            onClick={() => {
-              this.handleDelete(m._id);
-            }}
-            className="btn btn-danger m-2"
-          >
-            Delete
-          </button>
+          <td>
+            <Like movie={m} onHeart={this.handleHeart} />
+          </td>
+          <td>
+            <button
+              onClick={() => {
+                this.handleDelete(m._id);
+              }}
+              className="btn btn-danger"
+            >
+              Delete
+            </button>
+          </td>
         </tr>
       );
     });
@@ -46,6 +52,8 @@ class Movies extends Component {
         <th>Genre</th>
         <th>Stock</th>
         <th>Rate</th>
+        <th>Like</th>
+        <th>Action</th>
       </tr>
     );
   };
@@ -59,28 +67,32 @@ class Movies extends Component {
   };
 
   handlePageChange = (page) => {
-    console.log(page);
+    this.setState({ currentPage: page });
   };
 
   render() {
-    console.log(this.state.movies);
     let count = this.state.movies.length;
+    const { pageSize, currentPage, movies: allMovies } = this.state;
+    const movies = paginate(allMovies, currentPage, pageSize);
+
     if (count == 0)
       return (
         <div className="container">
           <h2>There are no movie</h2>
         </div>
       );
+
     return (
       <div className="container">
         <table className="table">
           <thead>{this.renderTableHeader()}</thead>
-          <tbody>{this.renderTableData()}</tbody>
+          <tbody>{this.renderTableData(movies)}</tbody>
         </table>
         <Pagination
-          totalCount={count}
-          pageSize={this.state.pageSize}
-          onPageChange={this.handlePageChange}
+          itemsCount={count}
+          pageSize={pageSize}
+          onPageChanges={this.handlePageChange}
+          currentPage={currentPage}
         />
       </div>
     );
