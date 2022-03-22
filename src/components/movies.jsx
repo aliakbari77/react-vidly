@@ -2,9 +2,10 @@ import React, { Component } from "react";
 import { getGenres } from "../services/fakeGenreService";
 import { getMovies } from "../services/fakeMovieService";
 import { paginate } from "../utils/paginate";
-import Like from "./common/like";
 import ListGroup from "./common/listGroup";
 import Pagination from "./common/pagination";
+import MoviesTable from "./moviesTable";
+import _ from "lodash";
 
 class Movies extends Component {
   state = {
@@ -12,10 +13,14 @@ class Movies extends Component {
     genres: [],
     pageSize: 4,
     currentPage: 1,
+    sortColumn: {
+      path: "title",
+      order: "asc",
+    },
   };
 
   componentDidMount() {
-    const genres = [{ name: "All Genres" }, ...getGenres()];
+    const genres = [{ _id: "", name: "All Genres" }, ...getGenres()];
 
     this.setState({ movies: getMovies(), genres });
   }
@@ -27,51 +32,11 @@ class Movies extends Component {
     this.setState({ movies: this.state.movies });
   };
 
-  renderTableData = (movies) => {
-    let list = movies.map((m) => {
-      return (
-        <tr key={m._id}>
-          <td>{m.title}</td>
-          <td>{m.genre.name}</td>
-          <td>{m.numberInStock}</td>
-          <td>{m.dailyRentalRate}</td>
-          <td>
-            <Like movie={m} onHeart={this.handleHeart} />
-          </td>
-          <td>
-            <button
-              onClick={() => {
-                this.handleDelete(m._id);
-              }}
-              className="btn btn-danger"
-            >
-              Delete
-            </button>
-          </td>
-        </tr>
-      );
-    });
-    return list;
-  };
-
-  renderTableHeader = () => {
-    return (
-      <tr>
-        <th>Title</th>
-        <th>Genre</th>
-        <th>Stock</th>
-        <th>Rate</th>
-        <th>Like</th>
-        <th>Action</th>
-      </tr>
-    );
-  };
-
   handleHeart = (movie) => {
     const movies = this.state.movies;
     const index = movies.indexOf(movie);
     movies[index] = { ...movie };
-    movies[index].enabled = movies[index].enabled == undefined ? true : false;
+    movies[index].liked = !movies[index].liked ? true : false;
     this.setState({ movies });
   };
 
@@ -83,13 +48,17 @@ class Movies extends Component {
     this.setState({ selectedGenre: genre, currentPage: 1 });
   };
 
-  render() {
-    let count = this.state.movies.length;
+  handleSort = (sortColumn) => {
+    this.setState({ sortColumn });
+  };
+
+  getPageData = () => {
     const {
       pageSize,
       currentPage,
       movies: allMovies,
       selectedGenre,
+      sortColumn,
     } = this.state;
 
     const filtered =
@@ -97,7 +66,16 @@ class Movies extends Component {
         ? allMovies.filter((m) => m.genre._id === selectedGenre._id)
         : allMovies;
 
-    const movies = paginate(filtered, currentPage, pageSize);
+    const sorted = _.orderBy(filtered, sortColumn.path, sortColumn.order);
+
+    const movies = paginate(sorted, currentPage, pageSize);
+
+    return { totalCount: filtered.length, data: movies };
+  };
+
+  render() {
+    let count = this.state.movies.length;
+    const { pageSize, currentPage, sortColumn } = this.state;
 
     if (count == 0)
       return (
@@ -105,6 +83,8 @@ class Movies extends Component {
           <h2>There are no movie</h2>
         </div>
       );
+
+    const { totalCount, data: movies } = this.getPageData();
 
     return (
       <div className="container p-3">
@@ -117,13 +97,16 @@ class Movies extends Component {
             />
           </div>
           <div className="col-9">
-            <h4>Showing {filtered.length} movies in the databases.</h4>
-            <table className="table">
-              <thead>{this.renderTableHeader()}</thead>
-              <tbody>{this.renderTableData(movies)}</tbody>
-            </table>
+            <h4>Showing {totalCount} movies in the databases.</h4>
+            <MoviesTable
+              movies={movies}
+              sortColumn={sortColumn}
+              onLike={this.handleHeart}
+              onDelete={this.handleDelete}
+              onSort={this.handleSort}
+            />
             <Pagination
-              itemsCount={filtered.length}
+              itemsCount={totalCount}
               pageSize={pageSize}
               onPageChanges={this.handlePageChange}
               currentPage={currentPage}

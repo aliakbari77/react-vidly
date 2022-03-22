@@ -4,7 +4,7 @@ class Like extends Component {
   state = {};
 
   getClaasesHeart() {
-    const classes = this.props.movie.enabled ? "fa fa-heart" : "fa fa-heart-o";
+    const classes = this.props.liked ? "fa fa-heart" : "fa fa-heart-o";
 
     return classes;
   }
@@ -12,10 +12,7 @@ class Like extends Component {
   render() {
     return (
       <React.Fragment>
-        <i
-          className={this.getClaasesHeart()}
-          onClick={() => this.props.onHeart(this.props.movie)}
-        ></i>
+        <i className={this.getClaasesHeart()} onClick={this.props.onClick}></i>
       </React.Fragment>
     );
   }
