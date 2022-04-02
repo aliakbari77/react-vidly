@@ -9,6 +9,8 @@ import Movies from "./components/movies";
 import Pagination from "./components/common/pagination";
 import { BrowserRouter } from "react-router-dom";
 
+console.log(process.env);
+
 ReactDOM.render(
   <BrowserRouter>
     <App />
